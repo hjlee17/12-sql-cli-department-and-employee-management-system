@@ -12,7 +12,7 @@ An application to help business owners view and manage the departments, roles, a
 - [Questions](#questions)
 
 ## Installation
-1. Clone this [repository](https://github.com/hjlee17/12-sql-cli-department-and-employee-tracker.git).
+1. Clone this [repository](https://github.com/hjlee17/12-sql-cli-department-and-employee-management-system.git).
 2. Install [Node.js] (https://nodejs.org/).
 3. Install the dependencies using the ```npm i``` command. The following packages will be installed:
    - [Inquirer v.8.2.4](https://www.npmjs.com/package/inquirer/v/8.2.4)
