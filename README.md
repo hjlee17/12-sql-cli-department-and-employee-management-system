@@ -20,7 +20,7 @@ An application to help business owners view and manage the departments, roles, a
    - [dotenv v.8.2.0](https://www.npmjs.com/package/dotenv/v/8.2.0)
 
 ## Usage
-Invoke the application by by using the following command:
+Invoke the application by using the following command:
 ```bash
 node index.js
 ``` 
