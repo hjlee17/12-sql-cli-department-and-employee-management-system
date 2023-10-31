@@ -2,6 +2,33 @@
 const inquirer = require('inquirer');
 const mysql = require('mysql2');
 
+// package for formatted tables
+const Table = require('cli-table');
+// package for terminal color manipulation
+var colors = require('colors');
+
+// text colors
+// black
+// red
+// green
+// yellow
+// blue
+// magenta
+// cyan
+// white
+// gray
+// grey
+
+// bright text colors
+// brightRed
+// brightGreen
+// brightYellow
+// brightBlue
+// brightMagenta
+// brightCyan
+// brightWhite
+
+
 // env file
 require('dotenv').config();
 
@@ -13,13 +40,12 @@ const db = mysql.createConnection(
       password: process.env.db_password,
       database: process.env.db_name
     },
-    console.log(`Connected to the database.`)
+    console.log(colors.green(`\nSuccessfully connected to database!\n`))
 );
 
 // test connection
 db.query('SHOW TABLES', (err, results) => {
     if (err) {console.log(`There was an error connecting to the database: `, err)}
-    console.log(`Successfully connected to database!`)
     begin();
 });
 
@@ -54,7 +80,7 @@ const user_choices = [
 function begin() {
     inquirer.prompt(user_choices)
     .then(response => {
-        console.log(`Selected: ${response.user_selection}`); // remove later
+        console.log(colors.brightWhite(`\nSelected: ${response.user_selection}`)); // remove later
         switch (response.user_selection) {
             case 'View All Employees':
                 viewAllEmployees();
@@ -134,10 +160,27 @@ function viewAllEmployees() {
             console.log(`Error with selection: ${err}`)
             return begin();
         } else {
-            console.log(`Viewing all employees in order by last name:`)
-            // how to remove index column and quotes?
-            console.table(res);
+            console.log(colors.gray(`Viewing all employees in order by last name:`))
+            // format table
+            const employeeTable = new Table({
+                head: [colors.magenta('ID'), colors.magenta('Last, First'), colors.magenta('Role'), colors.magenta('Department'), colors.magenta('Salary'), colors.magenta('Manager')],
+                colWidths: [5, 20, 20, 20, 15, 20],
+            });
+
+            res.forEach(row => {
+                employeeTable.push([
+                    row.id,
+                    row.name, 
+                    row.role,
+                    row.department,
+                    row.salary,
+                    row.manager || 'n/a', 
+                ]);
+            });
+
+            console.log(employeeTable.toString());
         }
+        
         begin();
     });
 }
@@ -146,6 +189,6 @@ function viewAllEmployees() {
 function endConnection () {
     db.end(function(err) {
         if (err) {console.log(`Error ending database connection: ${err}`);} 
-        else {console.log('Database connection ended.');}
+        else {console.log(color.red('Database connection ended.'));}
     });
 }
