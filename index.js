@@ -1,53 +1,27 @@
-// import packages 
+// package for inquirer prompts
 const inquirer = require('inquirer');
-const mysql = require('mysql2');
-
 // package for formatted tables
 const Table = require('cli-table');
 // package for terminal color manipulation
 var colors = require('colors');
 
-// text colors
-// black
-// red
-// green
-// yellow
-// blue
-// magenta
-// cyan
-// white
-// gray
-// grey
+// import functuons
+const addEmployee = require('./lib/addEmployee.js');
 
-// bright text colors
-// brightRed
-// brightGreen
-// brightYellow
-// brightBlue
-// brightMagenta
-// brightCyan
-// brightWhite
-
-
-// env file
-require('dotenv').config();
 
 // connection to database
-const db = mysql.createConnection(
-    {
-      host: 'localhost',
-      user: process.env.db_user,
-      password: process.env.db_password,
-      database: process.env.db_name
-    },
-    console.log(colors.green(`\nSuccessfully connected to database!\n`))
-);
+const db = require('./config/connection.js');
 
 // test connection
-db.query('SHOW TABLES', (err, results) => {
-    if (err) {console.log(`There was an error connecting to the database: `, err)}
-    begin();
+db.connect((err) => {
+    if (err) {
+        console.log(`There was an error connecting to the database: `, err)
+    } else {
+        console.log(colors.green(`\nSuccessfully connected to database!\n`))
+        begin();
+    }
 });
+
 
 // initial user choices
 const user_choices = [
@@ -86,7 +60,7 @@ function begin() {
                 viewAllEmployees();
                 break;
             case 'Add Employee':
-                nonFunctioningChoice();
+                addEmployee();
                 break;
             case 'Update Employee Role':
                 nonFunctioningChoice();
