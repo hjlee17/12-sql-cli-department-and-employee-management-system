@@ -98,7 +98,7 @@ function begin() {
                 nonFunctioningChoice();
                 break;
             case 'View All Departments':
-                nonFunctioningChoice();
+                viewAllDepartments();
                 break;
             case 'Add Department':
                 nonFunctioningChoice();
@@ -140,7 +140,7 @@ function begin() {
 
 // for development, remove later
 function nonFunctioningChoice () {
-    console.log(`Selection not functional.`)
+    console.log(colors.red(`Selection not yet functional.\n`))
     begin();
 }
 
@@ -185,8 +185,6 @@ function viewAllEmployees() {
     });
 }
 
-
-
 function viewAllRoles () {
     const sql = `SELECT roles.id, roles.title
                  FROM roles
@@ -217,6 +215,39 @@ function viewAllRoles () {
         begin();
     });
 }
+
+function viewAllDepartments () {
+    const sql = `SELECT departments.id, departments.name
+                 FROM departments
+                 ORDER BY departments.name`;
+
+    db.query(sql, (err, res) => {
+        if (err) {
+            console.log(`Error with selection: ${err}`)
+            return begin();
+        } else {
+            console.log(colors.gray(`Viewing all departments:`))
+            // format table
+            const departmentTable = new Table({
+                head: [colors.magenta('ID'), colors.magenta('Department Name')],
+                colWidths: [5, 20],
+            });
+
+            res.forEach(row => {
+                departmentTable.push([
+                    row.id,
+                    row.name,  
+                ]);
+            });
+
+            console.log(departmentTable.toString());
+        }
+        
+        begin();
+    });
+}
+
+
 
 
 // end connection and quit database
