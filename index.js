@@ -23,7 +23,6 @@ db.query('SHOW TABLES', (err, results) => {
     begin();
 });
 
-
 // initial user choices
 const user_choices = [
     {
@@ -113,7 +112,37 @@ function begin() {
     });
 }
 
+// for development, remove later
+function nonFunctioningChoice () {
+    console.log(`Selection not functional.`)
+    begin();
+}
 
+function viewAllEmployees() {
+    const sql = `SELECT employees.id, 
+                        CONCAT(employees.last_name, ', ', employees.first_name) AS name,
+                        roles.title AS role, departments.name AS department, roles.salary,
+                        CONCAT(managers.first_name, ' ', managers.last_name) AS manager
+                 FROM employees
+                 LEFT JOIN roles ON employees.role_id = roles.id
+                 LEFT JOIN departments ON roles.department_id = departments.id
+                 LEFT JOIN employees AS managers ON employees.manager_id = managers.id
+                 ORDER BY employees.last_name, employees.first_name`;
+    
+    db.query(sql, (err, res) => {
+        if (err) {
+            console.log(`Error with selection: ${err}`)
+            return begin();
+        } else {
+            console.log(`Viewing all employees in order by last name:`)
+            // how to remove index column and quotes?
+            console.table(res);
+        }
+        begin();
+    });
+}
+
+// end connection and quit database
 function endConnection () {
     db.end(function(err) {
         if (err) {console.log(`Error ending database connection: ${err}`);} 
