@@ -80,7 +80,7 @@ const user_choices = [
 function begin() {
     inquirer.prompt(user_choices)
     .then(response => {
-        console.log(colors.brightWhite(`\nSelected: ${response.user_selection}`)); // remove later
+        console.log(colors.yellow(`\nSelected: ${response.user_selection}`)); // remove later
         switch (response.user_selection) {
             case 'View All Employees':
                 viewAllEmployees();
@@ -92,7 +92,7 @@ function begin() {
                 nonFunctioningChoice();
                 break;
             case 'View All Roles':
-                nonFunctioningChoice();
+                viewAllRoles();
                 break;
             case 'Add Role':
                 nonFunctioningChoice();
@@ -184,6 +184,40 @@ function viewAllEmployees() {
         begin();
     });
 }
+
+
+
+function viewAllRoles () {
+    const sql = `SELECT roles.id, roles.title
+                 FROM roles
+                 ORDER BY roles.title`;
+
+    db.query(sql, (err, res) => {
+        if (err) {
+            console.log(`Error with selection: ${err}`)
+            return begin();
+        } else {
+            console.log(colors.gray(`Viewing all roles:`))
+            // format table
+            const roleTable = new Table({
+                head: [colors.magenta('ID'), colors.magenta('Role Title')],
+                colWidths: [5, 20],
+            });
+
+            res.forEach(row => {
+                roleTable.push([
+                    row.id,
+                    row.title,  
+                ]);
+            });
+
+            console.log(roleTable.toString());
+        }
+        
+        begin();
+    });
+}
+
 
 // end connection and quit database
 function endConnection () {
