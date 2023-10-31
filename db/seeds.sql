@@ -9,7 +9,7 @@ VALUES ("koya", 19940912, 1),
        ("rj", 19921204, 2),
        ("chimmy", 19951013, 2),
        ("tata", 19951230, 2),
-       ("kooky", 19970901, 1);              
+       ("kooky", 19970901, 2);              
 
 INSERT INTO employees (first_name, last_name, role_id, manager_id)
 VALUES ("namjoon", "kim", 1, NULL),
