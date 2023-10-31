@@ -5,12 +5,13 @@ const Table = require('cli-table');
 // package for terminal color manipulation
 var colors = require('colors');
 
-// import functuons
-const addEmployee = require('./lib/addEmployee.js');
+// import functions
+const newEmpData = require('./lib/addEmployee.js');
+const { user_choices } = require('./lib/prompts');
 
 
 // connection to database
-const db = require('./config/connection.js');
+const db = require('./config/connection');
 
 // test connection
 db.connect((err) => {
@@ -23,32 +24,7 @@ db.connect((err) => {
 });
 
 
-// initial user choices
-const user_choices = [
-    {
-        type: 'list',
-        message: 'What would you like to do?',
-        name: 'user_selection',
-        choices: [
-            'View All Employees', 
-            'Add Employee',
-            'Update Employee Role', 
-            'View All Roles',
-            'Add Role',
-            'View All Departments',
-            'Add Department',
-            // bonus
-            'Update Employee Manager',
-            'View Employees By Manager',
-            'View Employees By Department',
-            'Delete Departments',
-            'Delete Roles',
-            'Delete Employees',
-            'View Total Utilized Budget Of A Department',
-            'Quit'
-        ]
-    },
-];
+
 
 // function to display choices for user selection
 function begin() {
@@ -228,6 +204,6 @@ function viewAllDepartments () {
 function endConnection () {
     db.end(function(err) {
         if (err) {console.log(`Error ending database connection: ${err}`);} 
-        else {console.log(color.red('Database connection ended.'));}
+        else {console.log(colors.red('Database connection ended.'));}
     });
 }
