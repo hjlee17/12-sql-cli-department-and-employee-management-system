@@ -7,11 +7,11 @@ var colors = require('colors');
 
 // import functions
 const newEmpData = require('./lib/addEmployee.js');
-const { user_choices } = require('./lib/prompts');
+const { user_choices, add_dept_prompts } = require('./lib/prompts');
 
 
 // connection to database
-const db = require('./config/connection');
+const { db, dbPromise } = require('./config/connection');
 
 // test connection
 db.connect((err) => {
@@ -22,8 +22,6 @@ db.connect((err) => {
         begin();
     }
 });
-
-
 
 
 // function to display choices for user selection
@@ -51,7 +49,7 @@ function begin() {
                 viewAllDepartments();
                 break;
             case 'Add Department':
-                nonFunctioningChoice();
+                addDept();
                 break;
             
             // bonus
@@ -176,7 +174,7 @@ function viewAllDepartments () {
             console.log(`Error with selection: ${err}`)
             return begin();
         } else {
-            console.log(colors.gray(`Viewing all departments:`))
+            console.log(colors.gray(`\nViewing all departments:`))
             // format table
             const departmentTable = new Table({
                 head: [colors.magenta('ID'), colors.magenta('Department Name')],
@@ -197,6 +195,24 @@ function viewAllDepartments () {
     });
 }
 
+async function addDept () {
+    try {
+        const response = await inquirer.prompt(add_dept_prompts);
+        const sql = `INSERT INTO departments (name) VALUES (?)`;
+        db.query(sql, [response.new_department], (err, res) => {
+            if (err) {
+                console.log(colors.red(`Error adding new department: ${err}\n`));
+                return begin();
+            } else {
+                console.log(colors.green(`Department has been added!`))
+                viewAllDepartments();
+            }
+        });
+    } catch (err) {
+        console.log(colors.red(`${err}\n`));
+        begin();
+    }
+}
 
 
 
