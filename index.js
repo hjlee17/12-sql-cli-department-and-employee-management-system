@@ -29,52 +29,53 @@ function begin() {
     .then(response => {
         console.log(colors.yellow(`\nSelected: ${response.user_selection}`)); // remove later
         switch (response.user_selection) {
-            case 'View All Employees':
-                viewAllEmployees();
-                break;
-            case 'Add Employee':
-                addEmployee();
-                break;
-            case 'Update Employee Role':
-                updateEmpRole();
-                break;
-            case 'View All Roles':
-                viewAllRoles();
-                break;
-            case 'Add Role':
-                addRole();
-                break;
-            case 'View All Departments':
+            case colors.blue('View All Departments'):
                 viewAllDepartments();
                 break;
-            case 'Add Department':
-                addDept();
+            case colors.blue('View All Roles'):
+                viewAllRoles();
                 break;
-            
-            // bonus
-            case 'Update Employee Manager':
+            case colors.blue('View All Employees'):
+                viewAllEmployees();
+                break;
+            case colors.cyan('View Employees By Manager'):
+                viewAllEmpsByManager();
+                break;
+            case colors.cyan('View Employees By Department'):
+                viewAllEmpsByDepartment();
+                break;
+                 
+            case colors.yellow('Update Employee Role'):
+                updateEmpRole();
+                break;
+            case colors.yellow('Update Employee Manager'):
                 updateEmpManager();
                 break;
-            case 'View Employees By Manager':
-                nonFunctioningChoice();
+            
+            case colors.green('Add Department'):
+                addDept();
                 break;
-            case 'View Employees By Department':
-                nonFunctioningChoice();
+            case colors.green('Add Role'):
+                addRole();
                 break;
-            case 'Delete Departments':
+            case colors.green('Add Employee'):
+                addEmployee();
+                break;
+                       
+            case colors.gray('Delete Departments'):
                 deleteDept();
                 break;
-            case 'Delete Roles':
+            case colors.brightMagenta('Delete Roles'):
                 deleteRoles();
                 break;
-            case 'Delete Employees':
+            case colors.brightMagenta('Delete Employees'):
                 deleteEmps();
                 break;
-            case 'View Total Utilized Budget Of A Department':
+            case colors.gray('View Total Utilized Budget Of A Department'):
                 nonFunctioningChoice();
                 break;
 
-            case 'Quit':
+            case colors.red('Quit'):
                 endConnection();
                 break;
 
@@ -115,6 +116,82 @@ function viewAllEmployees() {
                 employeeTable.cell(colors.magenta('Last, First'), row.name);
                 employeeTable.cell(colors.magenta('Role'), row.role);
                 employeeTable.cell(colors.magenta('Department'), row.department);
+                employeeTable.cell(colors.magenta('Salary, USD'), row.salary);
+                employeeTable.cell(colors.magenta('Manager'), row.manager || 'n/a');
+                employeeTable.newRow();
+            });
+
+            // print table
+            console.log(employeeTable.toString());
+        }
+        
+        begin();
+    });
+}
+
+function viewAllEmpsByManager() {
+    const sql = `SELECT employees.id, 
+                        CONCAT(employees.last_name, ', ', employees.first_name) AS name,
+                        roles.title AS role, departments.name AS department, roles.salary,
+                        CONCAT(managers.first_name, ' ', managers.last_name) AS manager
+                 FROM employees
+                 LEFT JOIN roles ON employees.role_id = roles.id
+                 LEFT JOIN departments ON roles.department_id = departments.id
+                 LEFT JOIN employees AS managers ON employees.manager_id = managers.id
+                 ORDER BY managers.last_name, managers.first_name`;
+    
+    db.query(sql, (err, res) => {
+        if (err) {
+            console.log(colors.red(`Error with selection.\n${err}`))
+            return begin();
+        } else {
+            console.log(colors.gray(`Viewing all employees in order by last name:`))
+            // format table with easy-table
+            const employeeTable = new easyTable();
+
+            res.forEach(function(row) {
+                employeeTable.cell(colors.magenta('Manager'), row.manager || 'n/a');
+                employeeTable.cell(colors.magenta('ID'), row.id);
+                employeeTable.cell(colors.magenta('Last, First'), row.name);
+                employeeTable.cell(colors.magenta('Role'), row.role);
+                employeeTable.cell(colors.magenta('Department'), row.department);
+                employeeTable.cell(colors.magenta('Salary, USD'), row.salary);
+                employeeTable.newRow();
+            });
+
+            // print table
+            console.log(employeeTable.toString());
+        }
+        
+        begin();
+    });
+}
+
+function viewAllEmpsByDepartment() {
+    const sql = `SELECT employees.id, 
+                        CONCAT(employees.last_name, ', ', employees.first_name) AS name,
+                        roles.title AS role, departments.name AS department, roles.salary,
+                        CONCAT(managers.first_name, ' ', managers.last_name) AS manager
+                 FROM employees
+                 LEFT JOIN roles ON employees.role_id = roles.id
+                 LEFT JOIN departments ON roles.department_id = departments.id
+                 LEFT JOIN employees AS managers ON employees.manager_id = managers.id
+                 ORDER BY departments.name`;
+    
+    db.query(sql, (err, res) => {
+        if (err) {
+            console.log(colors.red(`Error with selection.\n${err}`))
+            return begin();
+        } else {
+            console.log(colors.gray(`Viewing all employees in order by last name:`))
+            // format table with easy-table
+            const employeeTable = new easyTable();
+
+            res.forEach(function(row) {
+                employeeTable.cell(colors.magenta('Department'), row.department);
+                employeeTable.cell(colors.magenta('ID'), row.id);
+                employeeTable.cell(colors.magenta('Last, First'), row.name);
+                employeeTable.cell(colors.magenta('Role'), row.role);
                 employeeTable.cell(colors.magenta('Salary, USD'), row.salary);
                 employeeTable.cell(colors.magenta('Manager'), row.manager || 'n/a');
                 employeeTable.newRow();
