@@ -55,9 +55,6 @@ function begin() {
             case 'Update Employee Manager':
                 updateEmpManager();
                 break;
-            case 'Update Employee Manager':
-                nonFunctioningChoice();
-                break;
             case 'View Employees By Manager':
                 nonFunctioningChoice();
                 break;
@@ -71,7 +68,7 @@ function begin() {
                 nonFunctioningChoice();
                 break;
             case 'Delete Employees':
-                nonFunctioningChoice();
+                deleteEmps();
                 break;
             case 'View Total Utilized Budget Of A Department':
                 nonFunctioningChoice();
@@ -91,8 +88,8 @@ function nonFunctioningChoice () {
     begin();
 }
 
-
-
+// ---------------------------------------------------------------------------------------
+// VIEW ALL FUNCTIONS //
 function viewAllEmployees() {
     const sql = `SELECT employees.id, 
                         CONCAT(employees.last_name, ', ', employees.first_name) AS name,
@@ -188,7 +185,8 @@ function viewAllDepartments () {
 }
 
 
-
+// ---------------------------------------------------------------------------------------
+// ADD FUNCTIONS
 async function addDept () {
     try {
         // collect user info regarding new dept name
@@ -354,7 +352,8 @@ async function addEmployee () {
 }
 
 
-
+// ---------------------------------------------------------------------------------------
+// UPDATE FUNCTIONS
 async function updateEmpRole () {
     try {        
         // query departments from database
@@ -527,6 +526,66 @@ async function updateEmpManager () {
     }
 }
 
+// ---------------------------------------------------------------------------------------
+// DELETE FUNCTIONS
+async function deleteEmps () {
+    try {        
+        // query departments from database
+        const sql = `SELECT employees.id,
+                     CONCAT(employees.last_name, ', ', employees.first_name, ' [ID: ', employees.id, ']') AS name
+                     FROM employees
+                     ORDER BY employees.last_name;`;
+
+        db.promise().query(sql)
+        .then(([result]) => {
+            // using result, form array with list of employees
+            const employeeChoices = result.map(( { id, name } ) => 
+                ({
+                    name: name,
+                    value: id,
+                })
+            );
+       
+            // user prompt to collect info regarding emp to delete
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    message: "Select the employee to delete:",
+                    name: 'emp_to_delete',
+                    choices: employeeChoices
+                },
+                {
+                    type: 'confirm',
+                    message: function () {
+                        // can return message include the name? how to access name 
+                        return colors.red(`Are you sure you want to delete this employee? This cannot be undone!`);
+                    },
+                    name: 'confirm_delete',
+                },
+            ])
+            .then((response) => {
+                let deletedEmp = response.emp_to_delete;
+
+                const sql = `DELETE FROM employees WHERE id = ?`;
+                db.query(sql, [deletedEmp], (err, res) => {
+                    // error handling
+                    if (err) {
+                        console.log(colors.red(`Error deleting employee.\n${err}`));
+                        return begin();
+                    // success log message and display all employees to new employee list
+                    } else {
+                        console.log(colors.green(`Employee has been deleted.`))
+                        viewAllEmployees();
+                    }
+                })
+            })
+        })
+
+    } catch (err) {
+        console.log(colors.red(`${err}\n`));
+        begin();
+    }
+}
 
 // end connection and quit database
 function endConnection () {
