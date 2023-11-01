@@ -8,10 +8,9 @@ var colors = require('colors');
 // import functions
 const { user_choices, add_dept_prompts, add_role_prompts, add_emp_prompts, delete_dept_prompts } = require('./lib/prompts');
 
-
 // connection to database
 const db = require('./config/connection');
-// const { getRolesFromDatabase } = require('./lib/dbqueries.js');
+
 
 // test connection
 db.connect((err) => {
@@ -37,7 +36,7 @@ function begin() {
                 addEmployee();
                 break;
             case 'Update Employee Role':
-                updateEmployeeRole();
+                updateEmpRole();
                 break;
             case 'View All Roles':
                 viewAllRoles();
@@ -54,7 +53,7 @@ function begin() {
             
             // bonus
             case 'Update Employee Manager':
-                nonFunctioningChoice();
+                updateEmpManager();
                 break;
             case 'Update Employee Manager':
                 nonFunctioningChoice();
@@ -92,6 +91,8 @@ function nonFunctioningChoice () {
     begin();
 }
 
+
+
 function viewAllEmployees() {
     const sql = `SELECT employees.id, 
                         CONCAT(employees.last_name, ', ', employees.first_name) AS name,
@@ -105,7 +106,7 @@ function viewAllEmployees() {
     
     db.query(sql, (err, res) => {
         if (err) {
-            console.log(`Error with selection: ${err}`)
+            console.log(colors.red(`Error with selection.\n${err}`))
             return begin();
         } else {
             console.log(colors.gray(`Viewing all employees in order by last name:`))
@@ -137,7 +138,7 @@ function viewAllRoles () {
 
     db.query(sql, (err, res) => {
         if (err) {
-            console.log(`Error with selection: ${err}`)
+            console.log(colors.red(`Error with selection.\n${err}`))
             return begin();
         } else {
             console.log(colors.gray(`Viewing all roles by title:`))
@@ -165,7 +166,7 @@ function viewAllDepartments () {
 
     db.query(sql, (err, res) => {
         if (err) {
-            console.log(`Error with selection: ${err}`)
+            console.log(colors.red(`Error with selection.\n${err}`))
             return begin();
         } else {
             console.log(colors.gray(`Viewing all departments by name:`))
@@ -186,6 +187,8 @@ function viewAllDepartments () {
     });
 }
 
+
+
 async function addDept () {
     try {
         // collect user info regarding new dept name
@@ -196,7 +199,7 @@ async function addDept () {
         const sql = `INSERT INTO departments (name) VALUES (?)`;
         db.query(sql, [newDeptName], (err, res) => {
             if (err) {
-                console.log(colors.red(`Error adding new department: ${err}\n`));
+                console.log(colors.red(`Error adding new department.\n${err}`));
                 return begin();
             } else {
                 console.log(colors.green(`Department has been added!`))
@@ -208,7 +211,6 @@ async function addDept () {
         begin();
     }
 }
-
 
 async function addRole () {
     try {
@@ -263,9 +265,6 @@ async function addRole () {
     }
 }
 
-
-
-
 async function addEmployee () {
     try {
         // collect user info regarding new role name and salary
@@ -291,7 +290,7 @@ async function addEmployee () {
             inquirer.prompt([
                 {
                     type: 'list',
-                    message: "Select the role for the new employee: ",
+                    message: "Select the role for the new employee:",
                     name: 'new_emp_role',
                     choices: roleChoices
                 }
@@ -321,7 +320,7 @@ async function addEmployee () {
                     inquirer.prompt([
                         {
                             type: 'list',
-                            message: "Select the manager of the new employee: ",
+                            message: "Select the manager of the new employee:",
                             name: 'new_emp_manager',
                             choices: managerChoices
                         }
@@ -335,7 +334,7 @@ async function addEmployee () {
                         db.query(sql, [newEmpFirst, newEmpLast, newEmpRole, newEmpManager], (err, res) => {
                             // error handling
                             if (err) {
-                                console.log(colors.red(`Error adding new employee: ${err}\n`));
+                                console.log(colors.red(`Error adding new employee.\n${err}`));
                                 return begin();
                             // success log message and display all employees to show new employee included
                             } else {
@@ -356,8 +355,7 @@ async function addEmployee () {
 
 
 
-
-async function updateEmployeeRole () {
+async function updateEmpRole () {
     try {        
         // query departments from database
         const sql = `SELECT employees.id, 
@@ -377,7 +375,7 @@ async function updateEmployeeRole () {
                 })
             );
        
-            // user prompt to collect info regarding new emp's manager
+            // user prompt to collect info regarding emp to update
             inquirer.prompt([
                 {
                     type: 'list',
@@ -389,6 +387,7 @@ async function updateEmployeeRole () {
             .then((response) => {
                 let updatedEmp = response.emp_to_update;
 
+                // query to select roles
                 const sql = `SELECT roles.id, roles.title
                              FROM roles ORDER BY roles.title`;
 
@@ -400,10 +399,11 @@ async function updateEmployeeRole () {
                             value: id,
                         })
                     ); 
+                    // user prompt to collect info regarding emp's new role
                     inquirer.prompt([
                         {
                             type: 'list',
-                            message: "Select the new role for the employee: ",
+                            message: "Select the new role for the employee:",
                             name: 'updated_emp_role',
                             choices: roleChoices
                         }
@@ -411,11 +411,12 @@ async function updateEmployeeRole () {
                     .then((response) => {
                         let updatedEmpRole = response.updated_emp_role;
 
+                        // query to update role
                         const sql = `UPDATE employees SET role_id = ? WHERE id = ?`;
                         db.query(sql, [updatedEmp, updatedEmpRole], (err, res) => {
                             // error handling
                             if (err) {
-                                console.log(colors.red(`Error updating employee. ${err}\n`));
+                                console.log(colors.red(`Error updating employee.\n${err}`));
                                 return begin();
                             // success log message and display all employees to show new employee included
                             } else {
@@ -434,22 +435,97 @@ async function updateEmployeeRole () {
     }
 }
 
+async function updateEmpManager () {
+    try {        
+        // query selects employees who have managers 
+        // includes their name, ID, and name of manager
+        const sql = `SELECT employees.id,
+                     CONCAT(
+                        employees.last_name, ', ', employees.first_name,
+                        ' [ID: ', employees.id, ']',
+                        ' [Manager: ',
+                        (SELECT CONCAT(manager.first_name, ' ', manager.last_name) 
+                        FROM employees AS manager 
+                        WHERE manager.id = employees.manager_id),
+                        ']'
+                    ) AS name
+                     FROM employees
+                     INNER JOIN roles ON employees.role_id = roles.id
+                     WHERE employees.manager_id IS NOT NULL
+                     ORDER BY employees.last_name;`
 
+        db.promise().query(sql)
+        .then(([result]) => {
+            // using result, form array with list of employees
+            const employeeChoices = result.map(( { id, name } ) => 
+                ({
+                    name: name,
+                    value: id,
+                })
+            );
+       
+            // user prompt to collect info regarding emp to update
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    message: "Select the employee to update manager:",
+                    name: 'emp_to_update',
+                    choices: employeeChoices
+                }
+            ])
+            .then((response) => {
+                let updatedEmp = response.emp_to_update;
 
+                // query for list of employees to select manager
+                const sql = `SELECT employees.id,
+                             CONCAT(employees.last_name, ', ', employees.first_name, ' [ID: ', employees.id, ']') AS name
+                             FROM employees
+                             ORDER BY employees.last_name;`;
 
+                db.promise().query(sql)
+                .then(([result]) => {
+                    const managerChoices = result.map(( { id, name } ) => 
+                        ({
+                            name: name,
+                            value: id,
+                        })
+                    ); 
+                    
+                    // user prompt to collet info regarding new manager
+                    inquirer.prompt([
+                        {
+                            type: 'list',
+                            message: "Select the new manager for the employee:",
+                            name: 'updated_emp_manager',
+                            choices: managerChoices
+                        }
+                    ])
+                    .then((response) => {
+                        let updatedEmpManager = response.updated_emp_manager;
 
+                        // query to update manager
+                        const sql = `UPDATE employees SET manager_id = ? WHERE id = ?`;
+                        db.query(sql, [updatedEmp, updatedEmpManager], (err, res) => {
+                            // error handling
+                            if (err) {
+                                console.log(colors.red(`Error updating employee's manager.\n${err}`));
+                                return begin();
+                            // success log message and display all employees to show new employee included
+                            } else {
+                                console.log(colors.green(`Manager has been updated.`))
+                                viewAllEmployees();
+                            }
+                        })
+                    })
+                })
+            })
+        })
 
-
-
-
-
-
-
-
-
-
-
-
+    } catch (err) {
+        console.log(colors.red(`${err}\n`));
+        begin();
+    }
+}
 
 
 // end connection and quit database
