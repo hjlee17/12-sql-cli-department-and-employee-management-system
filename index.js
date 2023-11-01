@@ -6,8 +6,7 @@ var easyTable = require('easy-table')
 var colors = require('colors');
 
 // import functions
-const newEmpData = require('./lib/addEmployee.js');
-const { user_choices, add_dept_prompts, add_role_prompts, add_employee_prompts, delete_dept_prompts } = require('./lib/prompts');
+const { user_choices, add_dept_prompts, add_role_prompts, add_emp_prompts, delete_dept_prompts } = require('./lib/prompts');
 
 
 // connection to database
@@ -38,7 +37,7 @@ function begin() {
                 addEmployee();
                 break;
             case 'Update Employee Role':
-                nonFunctioningChoice();
+                updateEmployeeRole();
                 break;
             case 'View All Roles':
                 viewAllRoles();
@@ -270,7 +269,7 @@ async function addRole () {
 async function addEmployee () {
     try {
         // collect user info regarding new role name and salary
-        const response = await inquirer.prompt(add_employee_prompts);
+        const response = await inquirer.prompt(add_emp_prompts);
         let newEmpFirst = response.new_emp_first; 
         let newEmpLast = response.new_emp_last;
         
@@ -294,7 +293,6 @@ async function addEmployee () {
                     type: 'list',
                     message: "Select the role for the new employee: ",
                     name: 'new_emp_role',
-                    // need a choice for "none"
                     choices: roleChoices
                 }
             ])
@@ -302,7 +300,7 @@ async function addEmployee () {
                 let newEmpRole = response.new_emp_role;
 
                 const sql = `SELECT employees.id, 
-                             CONCAT(employees.last_name, ', ', employees.first_name) AS name
+                             CONCAT(employees.last_name, ', ', employees.first_name, ' [ID: ', employees.id, ']') AS name
                              FROM employees ORDER BY employees.last_name`;
 
                 db.promise().query(sql)
@@ -359,7 +357,82 @@ async function addEmployee () {
 
 
 
+async function updateEmployeeRole () {
+    try {        
+        // query departments from database
+        const sql = `SELECT employees.id, 
+                        CONCAT(employees.last_name, ', ', employees.first_name, 
+                            ' [Role: ', roles.title, ']', ' [ID: ', employees.id, ']') AS name
+                        FROM employees
+                        INNER JOIN roles ON employees.role_id = roles.id
+                        ORDER BY employees.last_name`;
 
+        db.promise().query(sql)
+        .then(([result]) => {
+            // using result, form array with list of employees
+            const employeeChoices = result.map(( { id, name } ) => 
+                ({
+                    name: name,
+                    value: id,
+                })
+            );
+       
+            // user prompt to collect info regarding new emp's manager
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    message: "Select the employee to update role:",
+                    name: 'emp_to_update',
+                    choices: employeeChoices
+                }
+            ])
+            .then((response) => {
+                let updatedEmp = response.emp_to_update;
+
+                const sql = `SELECT roles.id, roles.title
+                             FROM roles ORDER BY roles.title`;
+
+                db.promise().query(sql)
+                .then(([result]) => {
+                    const roleChoices = result.map(( { id, title } ) => 
+                        ({
+                            name: title,
+                            value: id,
+                        })
+                    ); 
+                    inquirer.prompt([
+                        {
+                            type: 'list',
+                            message: "Select the new role for the employee: ",
+                            name: 'updated_emp_role',
+                            choices: roleChoices
+                        }
+                    ])
+                    .then((response) => {
+                        let updatedEmpRole = response.updated_emp_role;
+
+                        const sql = `UPDATE employees SET role_id = ? WHERE id = ?`;
+                        db.query(sql, [updatedEmp, updatedEmpRole], (err, res) => {
+                            // error handling
+                            if (err) {
+                                console.log(colors.red(`Error updating employee. ${err}\n`));
+                                return begin();
+                            // success log message and display all employees to show new employee included
+                            } else {
+                                console.log(colors.green(`Role has been updated.`))
+                                viewAllEmployees();
+                            }
+                        })
+                    })
+                })
+            })
+        })
+
+    } catch (err) {
+        console.log(colors.red(`${err}\n`));
+        begin();
+    }
+}
 
 
 
