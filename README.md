@@ -36,7 +36,9 @@ and follow the prompts accordingly.
 [The MIT License](https://opensource.org/licenses/MIT/)
 
 ## Contributing
-n/a
+- w3 schools
+- stack overflow
+
 
 ## Questions
 - Github: [hjlee17](https://github.com/hjlee17)
