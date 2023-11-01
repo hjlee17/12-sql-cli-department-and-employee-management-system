@@ -141,20 +141,17 @@ function viewAllRoles () {
             console.log(`Error with selection: ${err}`)
             return begin();
         } else {
-            console.log(colors.gray(`Viewing all roles:`))
-            // format table
-            const roleTable = new Table({
-                head: [colors.magenta('ID'), colors.magenta('Role Title')],
-                colWidths: [5, 20],
+            console.log(colors.gray(`Viewing all roles by title:`))
+            // format table with easy-table
+            const roleTable = new easyTable();
+
+            res.forEach(function(row) {
+                roleTable.cell(colors.magenta('ID'), row.id);
+                roleTable.cell(colors.magenta('Role Title'), row.title);
+                roleTable.newRow();
             });
 
-            res.forEach(row => {
-                roleTable.push([
-                    row.id,
-                    row.title,  
-                ]);
-            });
-
+            // print table
             console.log(roleTable.toString());
         }
         
@@ -172,20 +169,17 @@ function viewAllDepartments () {
             console.log(`Error with selection: ${err}`)
             return begin();
         } else {
-            console.log(colors.gray(`\nViewing all departments:`))
-            // format table
-            const departmentTable = new Table({
-                head: [colors.magenta('ID'), colors.magenta('Department Name')],
-                colWidths: [5, 20],
+            console.log(colors.gray(`Viewing all departments by name:`))
+            // format table with easy-table
+            const departmentTable = new easyTable();
+
+            res.forEach(function(row) {
+                departmentTable.cell(colors.magenta('ID'), row.id);
+                departmentTable.cell(colors.magenta('Department Name'), row.name);
+                departmentTable.newRow();
             });
 
-            res.forEach(row => {
-                departmentTable.push([
-                    row.id,
-                    row.name,  
-                ]);
-            });
-
+            // print table
             console.log(departmentTable.toString());
         }
         
