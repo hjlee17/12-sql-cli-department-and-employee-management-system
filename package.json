@@ -13,7 +13,9 @@
     "cli-table": "^0.3.11",
     "colors": "^1.4.0",
     "dotenv": "^8.2.0",
+    "easy-table": "^1.2.0",
     "inquirer": "^8.2.4",
-    "mysql2": "^2.2.5"
+    "mysql2": "^2.2.5",
+    "promise-mysql2": "^1.0.0"
   }
 }

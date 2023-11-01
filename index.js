@@ -1,17 +1,18 @@
 // package for inquirer prompts
 const inquirer = require('inquirer');
 // package for formatted tables
-const Table = require('cli-table');
+var easyTable = require('easy-table')
 // package for terminal color manipulation
 var colors = require('colors');
 
 // import functions
 const newEmpData = require('./lib/addEmployee.js');
-const { user_choices, add_dept_prompts } = require('./lib/prompts');
+const { user_choices, add_dept_prompts, add_role_prompts, delete_dept_prompts } = require('./lib/prompts');
 
 
 // connection to database
-const { db, dbPromise } = require('./config/connection');
+const db = require('./config/connection');
+// const { getRolesFromDatabase } = require('./lib/dbqueries.js');
 
 // test connection
 db.connect((err) => {
@@ -43,7 +44,7 @@ function begin() {
                 viewAllRoles();
                 break;
             case 'Add Role':
-                nonFunctioningChoice();
+                addRole();
                 break;
             case 'View All Departments':
                 viewAllDepartments();
@@ -66,7 +67,7 @@ function begin() {
                 nonFunctioningChoice();
                 break;
             case 'Delete Departments':
-                nonFunctioningChoice();
+                deleteDept();
                 break;
             case 'Delete Roles':
                 nonFunctioningChoice();
@@ -109,23 +110,20 @@ function viewAllEmployees() {
             return begin();
         } else {
             console.log(colors.gray(`Viewing all employees in order by last name:`))
-            // format table
-            const employeeTable = new Table({
-                head: [colors.magenta('ID'), colors.magenta('Last, First'), colors.magenta('Role'), colors.magenta('Department'), colors.magenta('Salary'), colors.magenta('Manager')],
-                colWidths: [5, 20, 20, 20, 15, 20],
+            // format table with easy-table
+            const employeeTable = new easyTable();
+
+            res.forEach(function(row) {
+                employeeTable.cell(colors.magenta('ID'), row.id);
+                employeeTable.cell(colors.magenta('Last, First'), row.name);
+                employeeTable.cell(colors.magenta('Role'), row.role);
+                employeeTable.cell(colors.magenta('Department'), row.department);
+                employeeTable.cell(colors.magenta('Salary, USD'), row.salary);
+                employeeTable.cell(colors.magenta('Manager'), row.manager || 'n/a');
+                employeeTable.newRow();
             });
 
-            res.forEach(row => {
-                employeeTable.push([
-                    row.id,
-                    row.name, 
-                    row.role,
-                    row.department,
-                    row.salary,
-                    row.manager || 'n/a', 
-                ]);
-            });
-
+            // print table
             console.log(employeeTable.toString());
         }
         
@@ -197,9 +195,13 @@ function viewAllDepartments () {
 
 async function addDept () {
     try {
+        // collect user info regarding new dept name
         const response = await inquirer.prompt(add_dept_prompts);
+        let newDeptName = response.new_department;
+
+        // query departments from database
         const sql = `INSERT INTO departments (name) VALUES (?)`;
-        db.query(sql, [response.new_department], (err, res) => {
+        db.query(sql, [newDeptName], (err, res) => {
             if (err) {
                 console.log(colors.red(`Error adding new department: ${err}\n`));
                 return begin();
@@ -213,6 +215,64 @@ async function addDept () {
         begin();
     }
 }
+
+
+async function addRole () {
+    try {
+        // collect user info regarding new role name and salary
+        const response = await inquirer.prompt(add_role_prompts);
+        let newRoleTitle = response.new_role_title; 
+        let newRoleSalary = response.new_role_salary;
+        
+        // query departments from database
+        const sql = `SELECT departments.id, departments.name
+                        FROM departments
+                        ORDER BY departments.name`;
+        db.promise().query(sql)
+        .then(([result]) => {
+            // using result, form array with list of department choices
+            const deptChoices = result.map(( { id, name } ) => ( {
+                name: name,
+                value: id,
+            }
+            ));
+            
+            // user prompt to collect info regarding new role dept
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    message: "Select the department for the new role:",
+                    name: 'new_role_department',
+                    choices: deptChoices
+                }
+            ])
+            .then((response) => {
+                let newRoleDpt = response.new_role_department
+                const sql = `INSERT INTO roles (title, salary, department_id) VALUES (?, ?, ?)`;
+                // insert new role into the database
+                db.query(sql, [newRoleTitle, newRoleSalary, newRoleDpt], (err, res) => {
+                    // error handling
+                    if (err) {
+                        console.log(colors.red(`Error adding new role: ${err}\n`));
+                        return begin();
+                    // success log message and display all roles to show new role included
+                    } else {
+                        console.log(colors.green(`New role has been added: ${newRoleTitle}`))
+                        viewAllRoles();
+                    }
+                });
+            })
+        })
+
+    } catch (err) {
+        console.log(colors.red(`${err}\n`));
+        begin();
+    }
+}
+
+
+
+
 
 
 
