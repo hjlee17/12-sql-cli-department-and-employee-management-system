@@ -7,7 +7,7 @@ var colors = require('colors');
 
 // import functions
 const newEmpData = require('./lib/addEmployee.js');
-const { user_choices, add_dept_prompts, add_role_prompts, delete_dept_prompts } = require('./lib/prompts');
+const { user_choices, add_dept_prompts, add_role_prompts, add_employee_prompts, delete_dept_prompts } = require('./lib/prompts');
 
 
 // connection to database
@@ -263,6 +263,115 @@ async function addRole () {
         begin();
     }
 }
+
+
+
+
+async function addEmployee () {
+    try {
+        // collect user info regarding new role name and salary
+        const response = await inquirer.prompt(add_employee_prompts);
+        let newEmpFirst = response.new_emp_first; 
+        let newEmpLast = response.new_emp_last;
+        
+        // query departments from database
+        const sql = `SELECT roles.id, roles.title
+                     FROM roles ORDER BY roles.title`;
+
+        db.promise().query(sql)
+        .then(([result]) => {
+            // using result, form array with list of role choices
+            const roleChoices = result.map(( { id, title } ) => 
+                ({
+                    name: title,
+                    value: id,
+                })
+            );
+       
+            // user prompt to collect info regarding new emp's role
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    message: "Select the role for the new employee: ",
+                    name: 'new_emp_role',
+                    // need a choice for "none"
+                    choices: roleChoices
+                }
+            ])
+            .then((response) => {
+                let newEmpRole = response.new_emp_role;
+
+                const sql = `SELECT employees.id, 
+                             CONCAT(employees.last_name, ', ', employees.first_name) AS name
+                             FROM employees ORDER BY employees.last_name`;
+
+                db.promise().query(sql)
+                .then(([result]) => {
+                    // using result, form array with list of role choices
+                    const managerChoices = result.map(( { id, name } ) => 
+                        ({
+                            name: name,
+                            value: id,
+                        })
+                    );
+                    // push an empty string into the array to provide a "null" choice in the prompt
+                    managerChoices.push({
+                        name: 'None',
+                        value: null,
+                    });
+                    
+                    inquirer.prompt([
+                        {
+                            type: 'list',
+                            message: "Select the manager of the new employee: ",
+                            name: 'new_emp_manager',
+                            choices: managerChoices
+                        }
+                    ])
+                    .then((response) => {
+                        let newEmpManager = response.new_emp_manager;
+                        const sql = `INSERT INTO employees (first_name, last_name, role_id, manager_id) 
+                                     VALUES (?, ?, ?, ?)`;
+                        
+                        // insert new employee into the database
+                        db.query(sql, [newEmpFirst, newEmpLast, newEmpRole, newEmpManager], (err, res) => {
+                            // error handling
+                            if (err) {
+                                console.log(colors.red(`Error adding new employee: ${err}\n`));
+                                return begin();
+                            // success log message and display all employees to show new employee included
+                            } else {
+                                console.log(colors.green(`New role has been added: ${newEmpFirst} ${newEmpLast}`))
+                                viewAllEmployees();
+                            }
+                        });
+                    })
+                })
+            })
+        })
+
+    } catch (err) {
+        console.log(colors.red(`${err}\n`));
+        begin();
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
