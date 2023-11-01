@@ -65,7 +65,7 @@ function begin() {
                 deleteDept();
                 break;
             case 'Delete Roles':
-                nonFunctioningChoice();
+                deleteRoles();
                 break;
             case 'Delete Employees':
                 deleteEmps();
@@ -200,7 +200,7 @@ async function addDept () {
                 console.log(colors.red(`Error adding new department.\n${err}`));
                 return begin();
             } else {
-                console.log(colors.green(`Department has been added!`))
+                console.log(colors.green(`Department has been added! See updated list below:`))
                 viewAllDepartments();
             }
         });
@@ -250,7 +250,7 @@ async function addRole () {
                         return begin();
                     // success log message and display all roles to show new role included
                     } else {
-                        console.log(colors.green(`New role has been added: ${newRoleTitle}`))
+                        console.log(colors.green(`New role has been added: ${newRoleTitle}. See updated list below:`))
                         viewAllRoles();
                     }
                 });
@@ -276,7 +276,7 @@ async function addEmployee () {
 
         db.promise().query(sql)
         .then(([result]) => {
-            // using result, form array with list of role choices
+            // using result, form array with list of roles
             const roleChoices = result.map(( { id, title } ) => 
                 ({
                     name: title,
@@ -336,7 +336,7 @@ async function addEmployee () {
                                 return begin();
                             // success log message and display all employees to show new employee included
                             } else {
-                                console.log(colors.green(`New role has been added: ${newEmpFirst} ${newEmpLast}`))
+                                console.log(colors.green(`New role has been added: ${newEmpFirst} ${newEmpLast}. See updated list below:`))
                                 viewAllEmployees();
                             }
                         });
@@ -419,7 +419,7 @@ async function updateEmpRole () {
                                 return begin();
                             // success log message and display all employees to show new employee included
                             } else {
-                                console.log(colors.green(`Role has been updated.`))
+                                console.log(colors.green(`Role has been updated. See updates below:`))
                                 viewAllEmployees();
                             }
                         })
@@ -511,7 +511,7 @@ async function updateEmpManager () {
                                 return begin();
                             // success log message and display all employees to show new employee included
                             } else {
-                                console.log(colors.green(`Manager has been updated.`))
+                                console.log(colors.green(`Manager has been updated. See updates below:`))
                                 viewAllEmployees();
                             }
                         })
@@ -574,7 +574,7 @@ async function deleteEmps () {
                         return begin();
                     // success log message and display all employees to new employee list
                     } else {
-                        console.log(colors.green(`Employee has been deleted.`))
+                        console.log(colors.green(`Employee has been deleted. See updated list below:`))
                         viewAllEmployees();
                     }
                 })
@@ -586,6 +586,67 @@ async function deleteEmps () {
         begin();
     }
 }
+
+async function deleteRoles () {
+    try {        
+        // query roles from database
+        const sql = `SELECT roles.id, roles.title
+                     FROM roles
+                     ORDER BY roles.title`;
+
+        db.promise().query(sql)
+        .then(([result]) => {
+            // using result, form array with list of roles
+            const roleChoices = result.map(( { id, title } ) => 
+                ({
+                    name: title,
+                    value: id,
+                })
+            ); 
+            // user prompt to collect info regarding role to delete
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    message: "Select the role to delete:",
+                    name: 'role_to_delete',
+                    choices: roleChoices
+                },
+                {
+                    type: 'confirm',
+                    message: function () {
+                        // can return message include the name? how to access name?
+                        // can there be a table displayed to show which employees will be deleted as a result? 
+                        return colors.red(`Are you sure you want to delete this role? This cannot be undone!`);
+                    },
+                    name: 'confirm_delete',
+                },
+            ])
+            .then((response) => {
+                let deletedRole = response.role_to_delete;
+                console.log(deletedRole)
+
+                const sql = `DELETE FROM roles WHERE id = ?`;
+                db.query(sql, [deletedRole], (err, res) => {
+                    // error handling
+                    if (err) {
+                        console.log(colors.red(`Error deleting role.\n${err}`));
+                        return begin();
+                    // success log message and display all employees to new employee list
+                    } else {
+                        console.log(colors.green(`Role has been deleted. See updated list below:`))
+                        viewAllRoles();
+                    }
+                })
+            })
+        })
+
+    } catch (err) {
+        console.log(colors.red(`${err}\n`));
+        begin();
+    }
+}
+
+
 
 // end connection and quit database
 function endConnection () {
