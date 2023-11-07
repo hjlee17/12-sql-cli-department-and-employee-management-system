@@ -451,7 +451,7 @@ async function addEmployee () {
 
                 // query managers from database
                 const sql = `SELECT employees.id, 
-                             CONCAT(employees.last_name, ', ', employees.first_name, ' [ID: ', employees.id, ']') AS name
+                             CONCAT(employees.last_name, ', ', employees.first_name, ' [Employee ID: ', employees.id, ']') AS name
                              FROM employees ORDER BY employees.last_name`;
 
                 db.promise().query(sql)
@@ -514,7 +514,7 @@ async function updateEmpRole () {
         // query employees from database
         const sql = `SELECT employees.id, 
                         CONCAT(employees.last_name, ', ', employees.first_name, 
-                            ' [Role: ', roles.title, ']', ' [ID: ', employees.id, ']') AS name
+                            ' [Role: ', roles.title, ']', ' [Employee ID: ', employees.id, ']') AS name
                         FROM employees
                         INNER JOIN roles ON employees.role_id = roles.id
                         ORDER BY employees.last_name`;
@@ -567,7 +567,7 @@ async function updateEmpRole () {
 
                         // query to update role
                         const sql = `UPDATE employees SET role_id = ? WHERE id = ?`;
-                        db.query(sql, [updatedEmp, updatedEmpRole], (err, res) => {
+                        db.query(sql, [updatedEmpRole, updatedEmp], (err, res) => {
                             // error handling
                             if (err) {
                                 console.log(colors.red(`Error updating employee.\n${err}`));
@@ -596,7 +596,7 @@ async function updateEmpManager () {
         const sql = `SELECT employees.id,
                      CONCAT(
                         employees.last_name, ', ', employees.first_name,
-                        ' [ID: ', employees.id, ']',
+                        ' [Employee ID: ', employees.id, ']',
                         ' [Manager: ',
                         (SELECT CONCAT(manager.first_name, ' ', manager.last_name) 
                         FROM employees AS manager 
@@ -632,7 +632,7 @@ async function updateEmpManager () {
 
                 // query for list of employees to select manager
                 const sql = `SELECT employees.id,
-                             CONCAT(employees.last_name, ', ', employees.first_name, ' [ID: ', employees.id, ']') AS name
+                             CONCAT(employees.last_name, ', ', employees.first_name, ' [Employee ID: ', employees.id, ']') AS name
                              FROM employees
                              ORDER BY employees.last_name;`;
 
@@ -659,7 +659,7 @@ async function updateEmpManager () {
 
                         // query to update manager
                         const sql = `UPDATE employees SET manager_id = ? WHERE id = ?`;
-                        db.query(sql, [updatedEmp, updatedEmpManager], (err, res) => {
+                        db.query(sql, [updatedEmpManager, updatedEmp], (err, res) => {
                             // error handling
                             if (err) {
                                 console.log(colors.red(`Error updating employee's manager.\n${err}`));
@@ -687,7 +687,7 @@ async function deleteEmps () {
     try {        
         // query employees from database
         const sql = `SELECT employees.id,
-                     CONCAT(employees.last_name, ', ', employees.first_name, ' [ID: ', employees.id, ']') AS name
+                     CONCAT(employees.last_name, ', ', employees.first_name, ' [Employee ID: ', employees.id, ']') AS name
                      FROM employees
                      ORDER BY employees.last_name;`;
 
@@ -884,6 +884,6 @@ async function deleteDept () {
 function endConnection () {
     db.end(function(err) {
         if (err) {console.log(`Error ending database connection: ${err}`);} 
-        else {console.log(colors.red('Database connection ended.'));}
+        else {console.log(colors.red(`Database connection ended.`));}
     });
 }
