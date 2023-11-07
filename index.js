@@ -44,6 +44,9 @@ function begin() {
             case colors.cyan('View Employees By Department'):
                 viewAllEmpsByDepartment();
                 break;
+            case colors.white('View Total Utilized Budget Per Department'):
+                viewAllDeptBudgets();
+                break;
                  
             case colors.yellow('Update Employee Role'):
                 updateEmpRole();
@@ -71,9 +74,6 @@ function begin() {
             case colors.brightMagenta('Delete Employees'):
                 deleteEmps();
                 break;
-            case colors.gray('View Total Utilized Budget Of A Department'):
-                nonFunctioningChoice();
-                break;
 
             case colors.red('Quit'):
                 endConnection();
@@ -90,7 +90,7 @@ function nonFunctioningChoice () {
 }
 
 // ---------------------------------------------------------------------------------------
-// VIEW ALL FUNCTIONS //
+// VIEW FUNCTIONS //
 function viewAllEmployees() {
     const sql = `SELECT employees.id, 
                         CONCAT(employees.last_name, ', ', employees.first_name) AS name,
@@ -260,6 +260,37 @@ function viewAllDepartments () {
         begin();
     });
 }
+
+function viewAllDeptBudgets () {
+    // query roles from database
+    const sql = `SELECT name, SUM(roles.salary) AS total_department_budget
+                 FROM departments
+                 LEFT JOIN roles ON departments.id = roles.department_id
+                 GROUP BY departments.name;`;
+
+    db.query(sql, (err, res) => {
+        if (err) {
+            console.log(colors.red(`Error with selection.\n${err}`))
+            return begin();
+        } else {
+            console.log(colors.gray(`Viewing total budget for each department:`))
+            // format table with easy-table
+            const deptBudgetsTable = new easyTable();
+
+            res.forEach(function(row) {
+                deptBudgetsTable.cell(colors.magenta('Department Name'), row.name);
+                deptBudgetsTable.cell(colors.magenta('Total Department Budget'), row.total_department_budget);
+                deptBudgetsTable.newRow();
+            });
+
+            // print table
+            console.log(deptBudgetsTable.toString());
+        }
+        
+        begin();
+    });
+}
+
 
 
 // ---------------------------------------------------------------------------------------
