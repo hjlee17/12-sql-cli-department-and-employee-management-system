@@ -62,7 +62,7 @@ function begin() {
                 addEmployee();
                 break;
                        
-            case colors.gray('Delete Departments'):
+            case colors.brightMagenta('Delete Departments'):
                 deleteDept();
                 break;
             case colors.brightMagenta('Delete Roles'):
@@ -723,6 +723,64 @@ async function deleteRoles () {
     }
 }
 
+async function deleteDept () {
+    try {        
+        // query roles from database
+        const sql = `SELECT departments.id, departments.name
+                     FROM departments
+                     ORDER BY departments.name`;
+
+        db.promise().query(sql)
+        .then(([result]) => {
+            // using result, form array with list of departments
+            const deptChoices = result.map(( { id, name } ) => 
+                ({
+                    name: name,
+                    value: id,
+                })
+            ); 
+            // user prompt to collect info regarding department to delete
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    message: "Select the department to delete:",
+                    name: 'dept_to_delete',
+                    choices: deptChoices
+                },
+                {
+                    type: 'confirm',
+                    message: function () {
+                        // can return message include the name? how to access name?
+                        // can there be a table displayed to show which employees will be deleted as a result? 
+                        return colors.red(`Are you sure you want to delete this department? This cannot be undone!`);
+                    },
+                    name: 'confirm_delete',
+                },
+            ])
+            .then((response) => {
+                let deletedDept = response.dept_to_delete;
+                console.log(deletedDept)
+
+                const sql = `DELETE FROM departments WHERE id = ?`;
+                db.query(sql, [deletedDept], (err, res) => {
+                    // error handling
+                    if (err) {
+                        console.log(colors.red(`Error deleting department.\n${err}`));
+                        return begin();
+                    // success log message and display all departments
+                    } else {
+                        console.log(colors.green(`Department has been deleted. See updated list below:`))
+                        viewAllDepartments();
+                    }
+                })
+            })
+        })
+
+    } catch (err) {
+        console.log(colors.red(`${err}\n`));
+        endConnection();
+    }
+}
 
 
 // end connection and quit database
