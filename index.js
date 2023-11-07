@@ -6,13 +6,13 @@ var easyTable = require('easy-table')
 var colors = require('colors');
 
 // import functions
-const { user_choices, add_dept_prompts, add_role_prompts, add_emp_prompts, delete_dept_prompts } = require('./lib/prompts');
+const { user_choices, add_dept_prompts, add_role_prompts, add_emp_prompts } = require('./lib/prompts');
 
 // connection to database
 const db = require('./config/connection');
 
 
-// test connection
+// connection to database and app initialization
 db.connect((err) => {
     if (err) {
         console.log(`There was an error connecting to the database: `, err)
@@ -44,7 +44,7 @@ function begin() {
             case colors.cyan('View Employees By Department'):
                 viewAllEmpsByDepartment();
                 break;
-            case colors.white('View Total Utilized Budget Per Department'):
+            case colors.brightCyan('View Total Utilized Budget By Department'):
                 viewDeptBudget();
                 break;
                  
@@ -83,15 +83,72 @@ function begin() {
     });
 }
 
-// for development, remove later
-function nonFunctioningChoice () {
-    console.log(colors.red(`Selection not yet functional.\n`))
-    begin();
-}
-
 // ---------------------------------------------------------------------------------------
 // VIEW FUNCTIONS //
+function viewAllDepartments () {
+    // query to view all department ids and department names 
+    // in alphabetical order by names
+    const sql = `SELECT departments.id, departments.name
+                 FROM departments
+                 ORDER BY departments.name`;
+
+    db.query(sql, (err, res) => {
+        if (err) {
+            console.log(colors.red(`Error with selection.\n${err}`))
+            return begin();
+        } else {
+            console.log(colors.gray(`Viewing all departments by name:`))
+            // format table with easy-table
+            const departmentTable = new easyTable();
+
+            res.forEach(function(row) {
+                departmentTable.cell(colors.magenta('Department ID'), row.id);
+                departmentTable.cell(colors.magenta('Department Name'), row.name);
+                departmentTable.newRow();
+            });
+
+            // print table
+            console.log(departmentTable.toString());
+        }
+        
+        begin();
+    });
+}
+
+function viewAllRoles () {
+    // query to view all role ids and role titles 
+    // in alphabetical order by titles
+    const sql = `SELECT roles.id, roles.title
+                 FROM roles
+                 ORDER BY roles.title`;
+
+    db.query(sql, (err, res) => {
+        if (err) {
+            console.log(colors.red(`Error with selection.\n${err}`))
+            return begin();
+        } else {
+            console.log(colors.gray(`Viewing all roles by title:`))
+            // format table with easy-table
+            const roleTable = new easyTable();
+
+            res.forEach(function(row) {
+                roleTable.cell(colors.magenta('Role ID'), row.id);
+                roleTable.cell(colors.magenta('Role Title'), row.title);
+                roleTable.newRow();
+            });
+
+            // print table
+            console.log(roleTable.toString());
+        }
+        
+        begin();
+    });
+}
+
 function viewAllEmployees() {
+    // query to view all employees by
+    // id, last first, title, department, salary, manager (first last)
+    // in alphabetical order by last name
     const sql = `SELECT employees.id, 
                         CONCAT(employees.last_name, ', ', employees.first_name) AS name,
                         roles.title AS role, departments.name AS department, roles.salary,
@@ -112,12 +169,12 @@ function viewAllEmployees() {
             const employeeTable = new easyTable();
 
             res.forEach(function(row) {
-                employeeTable.cell(colors.magenta('ID'), row.id);
+                employeeTable.cell(colors.magenta('Employee ID'), row.id);
                 employeeTable.cell(colors.magenta('Last, First'), row.name);
                 employeeTable.cell(colors.magenta('Role'), row.role);
                 employeeTable.cell(colors.magenta('Department'), row.department);
-                employeeTable.cell(colors.magenta('Salary, USD'), row.salary);
-                employeeTable.cell(colors.magenta('Manager'), row.manager || 'n/a');
+                employeeTable.cell(colors.magenta('Salary'), row.salary);
+                employeeTable.cell(colors.magenta('Manager'), row.manager || 'n/a'); // null manager displays as "n/a"
                 employeeTable.newRow();
             });
 
@@ -130,6 +187,10 @@ function viewAllEmployees() {
 }
 
 function viewAllEmpsByManager() {
+    // query to view all employees by
+    // manager (first last), id, last first, role, department, salary
+    // grouped by manager's name
+    // in alphabetical order by manager's last name, then first
     const sql = `SELECT employees.id, 
                         CONCAT(employees.last_name, ', ', employees.first_name) AS name,
                         roles.title AS role, departments.name AS department, roles.salary,
@@ -151,11 +212,11 @@ function viewAllEmpsByManager() {
 
             res.forEach(function(row) {
                 employeeTable.cell(colors.magenta('Manager'), row.manager || 'n/a');
-                employeeTable.cell(colors.magenta('ID'), row.id);
+                employeeTable.cell(colors.magenta('Employee ID'), row.id);
                 employeeTable.cell(colors.magenta('Last, First'), row.name);
                 employeeTable.cell(colors.magenta('Role'), row.role);
                 employeeTable.cell(colors.magenta('Department'), row.department);
-                employeeTable.cell(colors.magenta('Salary, USD'), row.salary);
+                employeeTable.cell(colors.magenta('Salary'), row.salary);
                 employeeTable.newRow();
             });
 
@@ -168,6 +229,10 @@ function viewAllEmpsByManager() {
 }
 
 function viewAllEmpsByDepartment() {
+    // query to view all employees by
+    // department, id, last first, role, salary, manager (first last)
+    // grouped by manager's name
+    // in alphabetical order by manager's last name, then first
     const sql = `SELECT employees.id, 
                         CONCAT(employees.last_name, ', ', employees.first_name) AS name,
                         roles.title AS role, departments.name AS department, roles.salary,
@@ -189,10 +254,10 @@ function viewAllEmpsByDepartment() {
 
             res.forEach(function(row) {
                 employeeTable.cell(colors.magenta('Department'), row.department);
-                employeeTable.cell(colors.magenta('ID'), row.id);
+                employeeTable.cell(colors.magenta('Employee ID'), row.id);
                 employeeTable.cell(colors.magenta('Last, First'), row.name);
                 employeeTable.cell(colors.magenta('Role'), row.role);
-                employeeTable.cell(colors.magenta('Salary, USD'), row.salary);
+                employeeTable.cell(colors.magenta('Salary'), row.salary);
                 employeeTable.cell(colors.magenta('Manager'), row.manager || 'n/a');
                 employeeTable.newRow();
             });
@@ -205,65 +270,9 @@ function viewAllEmpsByDepartment() {
     });
 }
 
-function viewAllRoles () {
-    const sql = `SELECT roles.id, roles.title
-                 FROM roles
-                 ORDER BY roles.title`;
-
-    db.query(sql, (err, res) => {
-        if (err) {
-            console.log(colors.red(`Error with selection.\n${err}`))
-            return begin();
-        } else {
-            console.log(colors.gray(`Viewing all roles by title:`))
-            // format table with easy-table
-            const roleTable = new easyTable();
-
-            res.forEach(function(row) {
-                roleTable.cell(colors.magenta('ID'), row.id);
-                roleTable.cell(colors.magenta('Role Title'), row.title);
-                roleTable.newRow();
-            });
-
-            // print table
-            console.log(roleTable.toString());
-        }
-        
-        begin();
-    });
-}
-
-function viewAllDepartments () {
-    const sql = `SELECT departments.id, departments.name
-                 FROM departments
-                 ORDER BY departments.name`;
-
-    db.query(sql, (err, res) => {
-        if (err) {
-            console.log(colors.red(`Error with selection.\n${err}`))
-            return begin();
-        } else {
-            console.log(colors.gray(`Viewing all departments by name:`))
-            // format table with easy-table
-            const departmentTable = new easyTable();
-
-            res.forEach(function(row) {
-                departmentTable.cell(colors.magenta('ID'), row.id);
-                departmentTable.cell(colors.magenta('Department Name'), row.name);
-                departmentTable.newRow();
-            });
-
-            // print table
-            console.log(departmentTable.toString());
-        }
-        
-        begin();
-    });
-}
-
 async function viewDeptBudget () {
     try {        
-        // query roles from database
+        // query departments from database
         const sql = `SELECT departments.id, departments.name
                      FROM departments
                      ORDER BY departments.name`;
@@ -313,6 +322,8 @@ async function viewDeptBudget () {
                         // print table
                         console.log(deptBudgetTable.toString());
                     }
+
+                    begin();
                 })
             })
         })
@@ -333,7 +344,7 @@ async function addDept () {
         const response = await inquirer.prompt(add_dept_prompts);
         let newDeptName = response.new_department;
 
-        // query departments from database
+        // query to insert new department
         const sql = `INSERT INTO departments (name) VALUES (?)`;
         db.query(sql, [newDeptName], (err, res) => {
             if (err) {
@@ -359,8 +370,8 @@ async function addRole () {
         
         // query departments from database
         const sql = `SELECT departments.id, departments.name
-                        FROM departments
-                        ORDER BY departments.name`;
+                     FROM departments
+                     ORDER BY departments.name`;
         db.promise().query(sql)
         .then(([result]) => {
             // using result, form array with list of department choices
@@ -381,6 +392,8 @@ async function addRole () {
             ])
             .then((response) => {
                 let newRoleDpt = response.new_role_department
+
+                // query to insert new role
                 const sql = `INSERT INTO roles (title, salary, department_id) VALUES (?, ?, ?)`;
                 // insert new role into the database
                 db.query(sql, [newRoleTitle, newRoleSalary, newRoleDpt], (err, res) => {
@@ -405,12 +418,12 @@ async function addRole () {
 
 async function addEmployee () {
     try {
-        // collect user info regarding new role name and salary
+        // collect user info regarding new employee name and salary
         const response = await inquirer.prompt(add_emp_prompts);
         let newEmpFirst = response.new_emp_first; 
         let newEmpLast = response.new_emp_last;
         
-        // query departments from database
+        // query roles from database
         const sql = `SELECT roles.id, roles.title
                      FROM roles ORDER BY roles.title`;
 
@@ -436,6 +449,7 @@ async function addEmployee () {
             .then((response) => {
                 let newEmpRole = response.new_emp_role;
 
+                // query managers from database
                 const sql = `SELECT employees.id, 
                              CONCAT(employees.last_name, ', ', employees.first_name, ' [ID: ', employees.id, ']') AS name
                              FROM employees ORDER BY employees.last_name`;
@@ -465,6 +479,7 @@ async function addEmployee () {
                     ])
                     .then((response) => {
                         let newEmpManager = response.new_emp_manager;
+                        // query to insert new employee
                         const sql = `INSERT INTO employees (first_name, last_name, role_id, manager_id) 
                                      VALUES (?, ?, ?, ?)`;
                         
@@ -496,7 +511,7 @@ async function addEmployee () {
 // UPDATE FUNCTIONS
 async function updateEmpRole () {
     try {        
-        // query departments from database
+        // query employees from database
         const sql = `SELECT employees.id, 
                         CONCAT(employees.last_name, ', ', employees.first_name, 
                             ' [Role: ', roles.title, ']', ' [ID: ', employees.id, ']') AS name
@@ -526,7 +541,7 @@ async function updateEmpRole () {
             .then((response) => {
                 let updatedEmp = response.emp_to_update;
 
-                // query to select roles
+                // query roles from database
                 const sql = `SELECT roles.id, roles.title
                              FROM roles ORDER BY roles.title`;
 
@@ -587,7 +602,7 @@ async function updateEmpManager () {
                         FROM employees AS manager 
                         WHERE manager.id = employees.manager_id),
                         ']'
-                    ) AS name
+                        ) AS name
                      FROM employees
                      INNER JOIN roles ON employees.role_id = roles.id
                      WHERE employees.manager_id IS NOT NULL
@@ -670,7 +685,7 @@ async function updateEmpManager () {
 // DELETE FUNCTIONS
 async function deleteEmps () {
     try {        
-        // query departments from database
+        // query employees from database
         const sql = `SELECT employees.id,
                      CONCAT(employees.last_name, ', ', employees.first_name, ' [ID: ', employees.id, ']') AS name
                      FROM employees
@@ -705,19 +720,26 @@ async function deleteEmps () {
             ])
             .then((response) => {
                 let deletedEmp = response.emp_to_delete;
-
-                const sql = `DELETE FROM employees WHERE id = ?`;
-                db.query(sql, [deletedEmp], (err, res) => {
-                    // error handling
-                    if (err) {
-                        console.log(colors.red(`Error deleting employee.\n${err}`));
-                        return begin();
-                    // success log message and display all employees to new employee list
-                    } else {
-                        console.log(colors.green(`Employee has been deleted. See updated list below:`))
-                        viewAllEmployees();
-                    }
-                })
+                let confirmation = response.confirm_delete;
+            
+                if (confirmation === true) {
+                    // query to delete employee
+                    const sql = `DELETE FROM employees WHERE id = ?`;
+                    db.query(sql, [deletedEmp], (err, res) => {
+                        // error handling
+                        if (err) {
+                            console.log(colors.red(`Error deleting employee.\n${err}`));
+                            return begin();
+                        // success log message and display all employees to new employee list
+                        } else {
+                            console.log(colors.green(`Employee has been deleted. See updated list below:`))
+                            viewAllEmployees();
+                        }
+                    })
+                } else {
+                    console.log(colors.grey(`Employee deletion has been canceled.`));
+                    begin();
+                }
             })
         })
 
@@ -755,7 +777,7 @@ async function deleteRoles () {
                     type: 'confirm',
                     message: function () {
                         // can return message include the name? how to access name?
-                        // can there be a table displayed to show which employees will be deleted as a result? 
+                        // can there be a table displayed to show which role will be deleted as a result? 
                         return colors.red(`Are you sure you want to delete this role? This cannot be undone!`);
                     },
                     name: 'confirm_delete',
@@ -763,20 +785,26 @@ async function deleteRoles () {
             ])
             .then((response) => {
                 let deletedRole = response.role_to_delete;
-                console.log(deletedRole)
+                let confirmation = response.confirm_delete;
 
-                const sql = `DELETE FROM roles WHERE id = ?`;
-                db.query(sql, [deletedRole], (err, res) => {
-                    // error handling
-                    if (err) {
-                        console.log(colors.red(`Error deleting role.\n${err}`));
-                        return begin();
-                    // success log message and display all employees to new employee list
-                    } else {
-                        console.log(colors.green(`Role has been deleted. See updated list below:`))
-                        viewAllRoles();
-                    }
-                })
+                if (confirmation === true) {
+                    // query to delete role
+                    const sql = `DELETE FROM roles WHERE id = ?`;
+                    db.query(sql, [deletedRole], (err, res) => {
+                        // error handling
+                        if (err) {
+                            console.log(colors.red(`Error deleting role.\n${err}`));
+                            return begin();
+                        // success log message and display all employees to new employee list
+                        } else {
+                            console.log(colors.green(`Role has been deleted. See updated list below:`))
+                            viewAllRoles();
+                        }
+                    })
+                } else {
+                    console.log(colors.grey(`Role deletion has been canceled.`));
+                    begin();
+                }
             })
         })
 
@@ -788,7 +816,7 @@ async function deleteRoles () {
 
 async function deleteDept () {
     try {        
-        // query roles from database
+        // query departments from database
         const sql = `SELECT departments.id, departments.name
                      FROM departments
                      ORDER BY departments.name`;
@@ -822,20 +850,26 @@ async function deleteDept () {
             ])
             .then((response) => {
                 let deletedDept = response.dept_to_delete;
-                console.log(deletedDept)
-
-                const sql = `DELETE FROM departments WHERE id = ?`;
-                db.query(sql, [deletedDept], (err, res) => {
-                    // error handling
-                    if (err) {
-                        console.log(colors.red(`Error deleting department.\n${err}`));
-                        return begin();
-                    // success log message and display all departments
-                    } else {
-                        console.log(colors.green(`Department has been deleted. See updated list below:`))
-                        viewAllDepartments();
-                    }
-                })
+                let confirmation = response.confirm_delete;
+                
+                if (confirmation === true) {
+                    // query to delete department
+                    const sql = `DELETE FROM departments WHERE id = ?`;
+                    db.query(sql, [deletedDept], (err, res) => {
+                        // error handling
+                        if (err) {
+                            console.log(colors.red(`Error deleting department.\n${err}`));
+                            return begin();
+                        // success log message and display all departments
+                        } else {
+                            console.log(colors.green(`Department has been deleted. See updated list below:`))
+                            viewAllDepartments();
+                        }
+                    })
+                } else {
+                    console.log(colors.grey(`Department deletion has been canceled.`));
+                    begin();
+                }
             })
         })
 
