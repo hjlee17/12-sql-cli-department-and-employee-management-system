@@ -45,7 +45,7 @@ and use the application according to the prompts.
 [The MIT License](https://opensource.org/licenses/MIT/)
 
 ## Contributing
-- W3 Cchools
+- W3 Schools
 - Stack Overflow
 - BootCampSpot
 
