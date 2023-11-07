@@ -45,7 +45,7 @@ function begin() {
                 viewAllEmpsByDepartment();
                 break;
             case colors.white('View Total Utilized Budget Per Department'):
-                viewAllDeptBudgets();
+                viewDeptBudget();
                 break;
                  
             case colors.yellow('Update Employee Role'):
@@ -261,34 +261,66 @@ function viewAllDepartments () {
     });
 }
 
-function viewAllDeptBudgets () {
-    // query roles from database
-    const sql = `SELECT name, SUM(roles.salary) AS total_department_budget
-                 FROM departments
-                 LEFT JOIN roles ON departments.id = roles.department_id
-                 GROUP BY departments.name;`;
+async function viewDeptBudget () {
+    try {        
+        // query roles from database
+        const sql = `SELECT departments.id, departments.name
+                     FROM departments
+                     ORDER BY departments.name`;
 
-    db.query(sql, (err, res) => {
-        if (err) {
-            console.log(colors.red(`Error with selection.\n${err}`))
-            return begin();
-        } else {
-            console.log(colors.gray(`Viewing total budget for each department:`))
-            // format table with easy-table
-            const deptBudgetsTable = new easyTable();
+        db.promise().query(sql)
+        .then(([result]) => {
+            // using result, form array with list of departments
+            const deptChoices = result.map(( { id, name } ) => 
+                ({
+                    name: name,
+                    value: id,
+                })
+            ); 
+            // user prompt to collect info regarding department to delete
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    message: "Select the department to view budget:",
+                    name: 'dept_budget_view',
+                    choices: deptChoices
+                },
+            ])
+            .then((response) => {
+                let selectedDept = response.dept_budget_view;
 
-            res.forEach(function(row) {
-                deptBudgetsTable.cell(colors.magenta('Department Name'), row.name);
-                deptBudgetsTable.cell(colors.magenta('Total Department Budget'), row.total_department_budget);
-                deptBudgetsTable.newRow();
-            });
+                const sql = `SELECT name, SUM(roles.salary) AS total_department_budget
+                             FROM departments
+                             LEFT JOIN roles ON departments.id = roles.department_id
+                             WHERE departments.id = ?;`;
+                db.query(sql, [selectedDept], (err, res) => {
+                    // error handling
+                    if (err) {
+                        console.log(colors.red(`Error viewing budget for selected department.\n${err}`));
+                        return begin();
+                    // success log message and display all dept budget
+                    } else {
+                        console.log(colors.gray(`Viewing total budget for each department:`))
+                        // format table with easy-table
+                        const deptBudgetTable = new easyTable();
+            
+                        res.forEach(function(row) {
+                            deptBudgetTable.cell(colors.magenta('Department Name'), row.name);
+                            deptBudgetTable.cell(colors.magenta('Total Department Budget'), row.total_department_budget);
+                            deptBudgetTable.newRow();
+                        });
+            
+                        // print table
+                        console.log(deptBudgetTable.toString());
+                    }
+                })
+            })
+        })
 
-            // print table
-            console.log(deptBudgetsTable.toString());
-        }
-        
-        begin();
-    });
+    } catch (err) {
+        console.log(colors.red(`${err}\n`));
+        endConnection();
+    }
 }
 
 
