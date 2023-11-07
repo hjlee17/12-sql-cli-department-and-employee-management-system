@@ -643,8 +643,13 @@ async function updateEmpManager () {
                             value: id,
                         })
                     ); 
+                    // push an empty string into the array to provide a "null" choice in the prompt
+                    managerChoices.push({
+                        name: 'None',
+                        value: null,
+                    });
                     
-                    // user prompt to collet info regarding new manager
+                    // user prompt to collect info regarding new manager
                     inquirer.prompt([
                         {
                             type: 'list',
@@ -679,6 +684,7 @@ async function updateEmpManager () {
         begin();
     }
 }
+
 
 // ---------------------------------------------------------------------------------------
 // DELETE FUNCTIONS
